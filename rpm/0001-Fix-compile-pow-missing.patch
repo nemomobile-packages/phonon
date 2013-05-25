@@ -1,0 +1,35 @@
+From d4ba54883218680cc9a285f969c0eb6c8034b37c Mon Sep 17 00:00:00 2001
+From: Ruediger Gad <r.c.g@gmx.de>
+Date: Mon, 24 Dec 2012 09:20:40 +0100
+Subject: [PATCH 1/2] Fix compile pow missing.
+
+
+Signed-off-by: Ruediger Gad <r.c.g@gmx.de>
+---
+ phonon/pulsestream.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/phonon/pulsestream.cpp b/phonon/pulsestream.cpp
+index d1e6711..e129f1b 100644
+--- a/phonon/pulsestream.cpp
++++ b/phonon/pulsestream.cpp
+@@ -21,6 +21,7 @@
+ */
+ 
+ #include "pulsestream_p.h"
++#include <QtCore/qmath.h>
+ 
+ QT_BEGIN_NAMESPACE
+ 
+@@ -81,7 +82,7 @@ void PulseStream::setVolume(const pa_cvolume *volume)
+         // AudioOutput expects the "backend" to supply values that have been
+         // adjusted for Stephens' law, so we need to fudge them accordingly
+         // so that the %ages match up in KMix/the application's own slider.
+-        emit volumeChanged(pow(vol, VOLTAGE_TO_LOUDNESS_EXPONENT));
++        emit volumeChanged(qPow(vol, VOLTAGE_TO_LOUDNESS_EXPONENT));
+     }
+ }
+ 
+-- 
+1.8.0
+

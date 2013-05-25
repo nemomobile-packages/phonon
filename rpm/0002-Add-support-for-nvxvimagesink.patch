@@ -1,0 +1,188 @@
+From acb8b3f15415a50a6d08524cd94403b4973acee0 Mon Sep 17 00:00:00 2001
+From: Ruediger Gad <r.c.g@gmx.de>
+Date: Mon, 24 Dec 2012 09:23:25 +0100
+Subject: [PATCH 2/2] Add support for nvxvimagesink.
+
+
+Signed-off-by: Ruediger Gad <r.c.g@gmx.de>
+---
+ gstreamer/videowidget.cpp | 91 +++++++++++++++++++++++++++--------------------
+ gstreamer/x11renderer.cpp | 50 ++++++++++++++++----------
+ 2 files changed, 84 insertions(+), 57 deletions(-)
+
+diff --git a/gstreamer/videowidget.cpp b/gstreamer/videowidget.cpp
+index c871d7b..d7cac9c 100644
+--- a/gstreamer/videowidget.cpp
++++ b/gstreamer/videowidget.cpp
+@@ -86,46 +86,59 @@ void VideoWidget::setupVideoBin()
+     gst_object_ref (GST_OBJECT (m_videoBin)); //Take ownership
+     gst_object_sink (GST_OBJECT (m_videoBin));
+ 
+-    //The videoplug element is the final element before the pluggable videosink
+-    m_videoplug = gst_element_factory_make ("identity", NULL);
+-
+-    //Colorspace ensures that the output of the stream matches the input format accepted by our video sink
+-    m_colorspace = gst_element_factory_make ("ffmpegcolorspace", NULL);
+-
+-    //Video scale is used to prepare the correct aspect ratio and scale.
+-    GstElement *videoScale = gst_element_factory_make ("videoscale", NULL);
+-
+-    //We need a queue to support the tee from parent node
+-    GstElement *queue = gst_element_factory_make ("queue", NULL);
+-
+-    if (queue && m_videoBin && videoScale && m_colorspace && videoSink && m_videoplug) {
+-        //Ensure that the bare essentials are prepared
+-        gst_bin_add_many (GST_BIN (m_videoBin), queue, m_colorspace, m_videoplug, videoScale, videoSink, (const char*)NULL);
+-        bool success = false;
+-        //Video balance controls color/sat/hue in the YUV colorspace
+-        m_videoBalance = gst_element_factory_make ("videobalance", NULL);
+-        if (m_videoBalance) {
+-            // For video balance to work we have to first ensure that the video is in YUV colorspace,
+-            // then hand it off to the videobalance filter before finally converting it back to RGB.
+-            // Hence we nede a videoFilter to convert the colorspace before and after videobalance
+-            GstElement *m_colorspace2 = gst_element_factory_make ("ffmpegcolorspace", NULL);
+-            gst_bin_add_many(GST_BIN(m_videoBin), m_videoBalance, m_colorspace2, (const char*)NULL);
+-            success = gst_element_link_many(queue, m_colorspace, m_videoBalance, m_colorspace2, videoScale, m_videoplug, videoSink, (const char*)NULL);
+-        } else {
+-            //If video balance is not available, just connect to sink directly
+-            success = gst_element_link_many(queue, m_colorspace, videoScale, m_videoplug, videoSink, (const char*)NULL);
+-        }
+-
+-        if (success) {
+-            GstPad *videopad = gst_element_get_pad (queue, "sink");
+-            gst_element_add_pad (m_videoBin, gst_ghost_pad_new ("sink", videopad));
+-            gst_object_unref (videopad);
+-            QWidget *parentWidget = qobject_cast<QWidget*>(parent());
+-            if (parentWidget)
+-                parentWidget->winId();  // Due to some existing issues with alien in 4.4,
+-                                        //  we must currently force the creation of a parent widget.
+-            m_isValid = true; //initialization ok, accept input
++    QByteArray tegraEnv = qgetenv("Q_GST_VIDEOSINK");
++    if (tegraEnv.isEmpty()) {
++        //The videoplug element is the final element before the pluggable videosink
++        m_videoplug = gst_element_factory_make ("identity", NULL);
++
++        //Colorspace ensures that the output of the stream matches the input format accepted by our video sink
++        m_colorspace = gst_element_factory_make ("ffmpegcolorspace", NULL);
++
++        //Video scale is used to prepare the correct aspect ratio and scale.
++        GstElement *videoScale = gst_element_factory_make ("videoscale", NULL);
++
++        //We need a queue to support the tee from parent node
++        GstElement *queue = gst_element_factory_make ("queue", NULL);
++
++        if (queue && m_videoBin && videoScale && m_colorspace && videoSink && m_videoplug) {
++            //Ensure that the bare essentials are prepared
++            gst_bin_add_many (GST_BIN (m_videoBin), queue, m_colorspace, m_videoplug, videoScale, videoSink, (const char*)NULL);
++            bool success = false;
++            //Video balance controls color/sat/hue in the YUV colorspace
++            m_videoBalance = gst_element_factory_make ("videobalance", NULL);
++            if (m_videoBalance) {
++                // For video balance to work we have to first ensure that the video is in YUV colorspace,
++                // then hand it off to the videobalance filter before finally converting it back to RGB.
++                // Hence we nede a videoFilter to convert the colorspace before and after videobalance
++                GstElement *m_colorspace2 = gst_element_factory_make ("ffmpegcolorspace", NULL);
++                gst_bin_add_many(GST_BIN(m_videoBin), m_videoBalance, m_colorspace2, (const char*)NULL);
++                success = gst_element_link_many(queue, m_colorspace, m_videoBalance, m_colorspace2, videoScale, m_videoplug, videoSink, (const char*)NULL);
++            } else {
++                //If video balance is not available, just connect to sink directly
++                success = gst_element_link_many(queue, m_colorspace, videoScale, m_videoplug, videoSink, (const char*)NULL);
++            }
++
++            if (success) {
++                GstPad *videopad = gst_element_get_pad (queue, "sink");
++                gst_element_add_pad (m_videoBin, gst_ghost_pad_new ("sink", videopad));
++                gst_object_unref (videopad);
++                QWidget *parentWidget = qobject_cast<QWidget*>(parent());
++                if (parentWidget)
++                    parentWidget->winId();  // Due to some existing issues with alien in 4.4,
++                                            //  we must currently force the creation of a parent widget.
++                m_isValid = true; //initialization ok, accept input
++            }
+         }
++    } else {
++        gst_bin_add_many (GST_BIN (m_videoBin), videoSink, NULL);
++        GstPad *videopad = gst_element_get_static_pad (videoSink,"sink");
++        gst_element_add_pad (m_videoBin, gst_ghost_pad_new ("sink", videopad));
++        gst_object_unref (videopad);
++        QWidget *parentWidget = qobject_cast<QWidget*>(parent());
++        if (parentWidget)
++            parentWidget->winId();  // Due to some existing issues with alien in 4.4,
++                                    //  we must currently force the creation of a parent widget.
++        m_isValid = true; //initialization ok, accept input
+     }
+ }
+ 
+diff --git a/gstreamer/x11renderer.cpp b/gstreamer/x11renderer.cpp
+index 9142ff8..49fb723 100644
+--- a/gstreamer/x11renderer.cpp
++++ b/gstreamer/x11renderer.cpp
+@@ -84,25 +84,33 @@ X11Renderer::~X11Renderer()
+ 
+ GstElement* X11Renderer::createVideoSink()
+ {
+-    GstElement *videoSink = gst_element_factory_make ("xvimagesink", NULL);
+-    if (videoSink) {
+-        // Check if the xv sink is usable
+-        if (gst_element_set_state(videoSink, GST_STATE_READY) != GST_STATE_CHANGE_SUCCESS) {
+-            gst_object_unref(GST_OBJECT(videoSink));
+-            videoSink = 0;
+-        } else {
+-            // Note that this should not really be necessary as these are
+-            // default values, though under certain conditions values are retained
+-            // even between application instances. (reproducible on 0.10.16/Gutsy)
+-            g_object_set(G_OBJECT(videoSink), "brightness", 0, (const char*)NULL);
+-            g_object_set(G_OBJECT(videoSink), "contrast", 0, (const char*)NULL);
+-            g_object_set(G_OBJECT(videoSink), "hue", 0, (const char*)NULL);
+-            g_object_set(G_OBJECT(videoSink), "saturation", 0, (const char*)NULL);
++    GstElement *videoSink;
++
++    QByteArray tegraEnv = qgetenv("Q_GST_VIDEOSINK");
++    if (tegraEnv.isEmpty()) {
++        videoSink = gst_element_factory_make ("xvimagesink", NULL);
++
++        if (videoSink) {
++            // Check if the xv sink is usable
++            if (gst_element_set_state(videoSink, GST_STATE_READY) != GST_STATE_CHANGE_SUCCESS) {
++                gst_object_unref(GST_OBJECT(videoSink));
++                videoSink = 0;
++            } else {
++                // Note that this should not really be necessary as these are
++                // default values, though under certain conditions values are retained
++                // even between application instances. (reproducible on 0.10.16/Gutsy)
++                g_object_set(G_OBJECT(videoSink), "brightness", 0, (const char*)NULL);
++                g_object_set(G_OBJECT(videoSink), "contrast", 0, (const char*)NULL);
++                g_object_set(G_OBJECT(videoSink), "hue", 0, (const char*)NULL);
++                g_object_set(G_OBJECT(videoSink), "saturation", 0, (const char*)NULL);
++            }
+         }
+-    }
+ 
+-    if (!videoSink)
+-        videoSink = gst_element_factory_make ("ximagesink", NULL);
++        if (!videoSink)
++            videoSink = gst_element_factory_make ("ximagesink", NULL);
++    } else {
++        videoSink = gst_element_factory_make ("nvxvimagesink", NULL);
++    }
+ 
+     gst_object_ref (GST_OBJECT (videoSink)); //Take ownership
+     gst_object_sink (GST_OBJECT (videoSink));
+@@ -175,7 +183,13 @@ void X11Renderer::setOverlay()
+         // Even if we have created a winId at this point, other X applications
+         // need to be aware of it.
+         QApplication::syncX();
+-        gst_x_overlay_set_xwindow_id ( GST_X_OVERLAY(m_videoSink) ,  windowId );
++
++        QByteArray tegraEnv = qgetenv("Q_GST_VIDEOSINK");
++        if (tegraEnv.isEmpty()) {
++            gst_x_overlay_set_xwindow_id ( GST_X_OVERLAY(m_videoSink) ,  windowId );
++        } else {
++            gst_x_overlay_set_window_handle ( GST_X_OVERLAY(m_videoSink) ,  windowId );
++        }
+     }
+     windowExposed();
+     m_overlaySet = true;
+-- 
+1.8.0
+

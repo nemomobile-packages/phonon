@@ -1,0 +1,26 @@
+From c0895e83c7d77d54e10eb53989d551e85259bbc2 Mon Sep 17 00:00:00 2001
+From: Marko Saukko <marko.saukko@jollamobile.com>
+Date: Fri, 31 Aug 2012 06:13:30 +0000
+Subject: [PATCH] With new glib you can only include glib.h
+
+Signed-off-by: Marko Saukko <marko.saukko@jollamobile.com>
+---
+ gstreamer/message.h |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/gstreamer/message.h b/gstreamer/message.h
+index c0b8473..bbeab16 100644
+--- a/gstreamer/message.h
++++ b/gstreamer/message.h
+@@ -20,7 +20,7 @@
+ 
+ #include <QtCore/QMetaType>
+ 
+-#include <glib-2.0/glib/gmacros.h> // For G_*_DECLS macros primarily
++#include <glib-2.0/glib.h> // For G_*_DECLS macros primarily
+ #include <gst/gstmessage.h>
+ 
+ QT_BEGIN_NAMESPACE
+-- 
+1.7.10.3
+

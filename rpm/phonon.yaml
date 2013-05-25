@@ -1,0 +1,87 @@
+Name: phonon
+Summary: Phonon multimedia framework
+Version: 4.4.3
+Release: 1
+Epoch: 1
+Group: System/Libraries
+License: LGPLv2.1
+URL: http://phonon.kde.org/
+Sources:
+    - "%{name}-%{version}.tar.bz2"
+Patches:
+    - 01_phonon-inc.patch
+    - 02_no_rpath.patch
+    - 03_phonon_is_not_forced_in_KDE.patch
+    - 0001-With-new-glib-you-can-only-include-glib.h.patch
+    - 0001-Fix-compile-pow-missing.patch
+    - 0002-Add-support-for-nvxvimagesink.patch
+
+Description: |
+    Phonon is the Qt 4 multimedia API, which provides a task-oriented abstraction
+    layer for capturing, mixing, processing, and playing audio and video content.
+
+PkgBR:
+    - automoc
+    - cmake
+    - gcc-c++
+PkgConfigBR:
+    - QtGui
+    - QtOpenGL
+    - alsa
+    - gl
+    - glib-2.0
+    - gstreamer-0.10
+    - gstreamer-plugins-base-0.10
+    - libpulse
+    - libxml-2.0
+    - x11
+    - xcb
+SetupOptions: -q -n %{name}-%{version}/%{name}
+Configure: none
+Builder: none
+SubPackages:
+    - Name: lib%{name}-devel
+      AsWholeName: yes
+      Summary: Phonon multimedia framework - development files
+      Group: Development/Libraries
+      Description: |
+          Phonon is the Qt 4 multimedia API, which provides a task-oriented abstraction
+          layer for capturing, mixing, processing, and playing audio and video content.
+          
+          This package contains the development files needed to build Qt 4 applications
+          using Phonon cross-platform multimedia framework.
+      Requires:
+          - lib%{name}4 = %{?epoch:%{epoch}:}%{version}
+          - libqt-devel >= 4.7.0
+
+    - Name: lib%{name}4
+      AsWholeName: yes
+      Summary: Phonon multimedia framework - runtime files
+      Group: System/Libraries
+      Description: |
+          Phonon is the Qt 4 multimedia API, which provides a task-oriented abstraction
+          layer for capturing, mixing, processing, and playing audio and video content.
+          
+          This package contains the core library of the Phonon cross-platform multimedia
+          framework for Qt 4. It is required to run applications that use Phonon.
+      Requires:
+          - "%{name}-backend"
+
+    - Name: "%{name}-backend-gstreamer"
+      AsWholeName: yes
+      Summary: Phonon GStreamer 0.10.x backend
+      Group: Applications/Multimedia
+      Description: |
+          Phonon is the Qt 4 multimedia API, which provides a task-oriented abstraction
+          layer for capturing, mixing, processing, and playing audio and video content.
+          
+          This package contains GStreamer 0.10.x backend for Phonon.
+          
+          You should install gst-plugins-good package to get support for playing popular
+          free multimedia formats and gstreamer0.10-plugins-ugly to get support for
+          popular MPEG audio formats like MP3.
+      Requires:
+          - gst-plugins-base
+      Provides:
+          - "%{name}-backend = %{?epoch:%{epoch}:}%{version}"
+

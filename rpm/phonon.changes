@@ -1,0 +1,31 @@
+* Fri Jan 25 2013 Marko Saukko <marko.saukko@jollamobile.com> - 4.4.3
+- Change glu to gl build dependency as it should have been already.
+
+* Mon Dec 24 2012 Ruediger Gad <r.c.g@gmx.de> - 4.4.3
+- Fix compile due to missing pow.
+- Add nvxvimagesink support.
+  This enables hw-accelerated video playback on tegra3 based devices.
+
+* Fri Aug 31 2012 Marko Saukko <marko.saukko@jollamobile.com> - 4.4.3
+- Fix build with new glib 0001-With-new-glib-you-can-only-include-glib.h.patch
+
+* Thu Nov 03 2011 Marko Saukko <marko.saukko@cybercom.com> - 4.4.3
+- Added .yaml for spectacle.
+
+* Sun May 29 2011 Anas Nashif <anas.nashif@intel.com> - 4.4.3
+- return to build directory at the end of %install
+
+* Fri Dec 31 2010 Fathi Boudra <fathi.boudra@nokia.com> - 4.4.3
+- New upstream release
+- Remove 04_add_phonon_qt_config.patch - merged upstream
+
+* Wed Sep 29 2010 Fathi Boudra <fathi.boudra@nokia.com> - 4.4.2
+- Add phonon-backend as it's a runtime dependency. Phonon is useless without
+   a backend. (BMC#7601)
+
+* Wed Sep 22 2010 Fathi Boudra <fathi.boudra@nokia.com> - 4.4.2
+- Bump libqt-devel Requires to 4.7.0 - fix OBS build:
+  nothing provides libqt-devel >= 4.7.0~prerelease+beta2
+
+* Mon Jul 19 2010 Fathi Boudra <fathi.boudra@nokia.com> - 4.4.2
+- Add Phonon package
