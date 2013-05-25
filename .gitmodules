@@ -1,0 +1,3 @@
+[submodule "phonon"]
+	path = phonon
+	url = git://anongit.kde.org/phonon
